@@ -1,10 +1,15 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from database import DatabaseManager  
-from crud import get_all_products
+from crud import get_all_products, create_product
+import os 
+import traceback
 
 app = FastAPI()
 
-config = DatabaseManager.load_settings("settings.json")
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+SETTINGS_PATH = os.path.join(BASE_DIR, "settings.json")
+
+config = DatabaseManager.load_settings(SETTINGS_PATH)
 
 db_manager = DatabaseManager(
     localhost=config["localhost"],
@@ -13,20 +18,26 @@ db_manager = DatabaseManager(
     database=config["database"]
 )
 
-@app.get("/products")
-def read_products():
-
+def get_db():
     conn = db_manager.get_connection()
-    
     if conn is None:
-        return {"error": "Could not connect to database"}
-
+        raise RuntimeError("Could not connect to database." + traceback.print_exc())
     try:
-        products = get_all_products(conn)
+        yield conn
+    finally:
+        conn.close()
+
+@app.get("/products")
+def read_products(db = Depends(get_db)):
+    try:
+        products = get_all_products(db)
         return {"products": products}
     
     except Exception as e:
         return {"error": f"Something went wrong: {e}"}
-        
-    finally:
-        conn.close()
+
+@app.post("/add_product")
+def add_product(name : str, description : str, category : str, price : float, db = Depends(get_db)):
+    create_product(db, name, description, category, price)
+
+    return {"message" : f"The product {name} has been added correctly! Finally!"}
