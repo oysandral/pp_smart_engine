@@ -24,7 +24,7 @@ def create_product(conn, name : str, description : str, category : str, price : 
     cursor.execute(query, (name, description, category, price, str(vector)))
     conn.commit()
 
-def search_products(conn, search_text):
+def search_products(conn, search_text : str):
     search_vector = get_embedding(search_text)
 
     if not search_vector:

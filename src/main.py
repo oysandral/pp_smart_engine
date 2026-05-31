@@ -41,3 +41,5 @@ def add_product(name : str, description : str, category : str, price : float, db
     create_product(db, name, description, category, price)
 
     return {"message" : f"The product {name} has been added correctly! Finally!"}
+
+# @app.get

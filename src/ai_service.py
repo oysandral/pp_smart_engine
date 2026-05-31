@@ -34,5 +34,5 @@ if __name__ == "__main__":
     test_text = "Nowe zasady ochrony środowiska 2026"
     vector = get_embedding(test_text)
     if vector:
-        print(f"Успех! Длина вектора: {len(vector)}")
-        print(f"Первые 3 числа: {vector[:3]}")
+        print(f"Finally! The vector's length: {len(vector)}")
+        print(f"First 3 numbers: {vector[:3]}")
