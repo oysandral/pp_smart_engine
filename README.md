@@ -1,6 +1,6 @@
 Smart recommendation engine 🇺🇸/🇵🇱
 
-Status: under development (Work in Progress)ю
+Status: under development (Work in Progress).
 
 pp_smart_engine is a project designed to improve and personalize e-commerce search using vectorization. Instead of basic keyword matching, the engine uses embeddings to understand the semantic meaning of products and user queries, allowing it to find relevant recommendations based on similarity in vector space.
 
@@ -9,6 +9,8 @@ Current implementation details:
 - integration with Google Gemini AI;
 - REST API endpoints with full CRUD functionality;
 - data validation powered by Pydantic.
+
+---------------------------------------------------------
 
 Status: w trakcie realizacji (Work in Progress).
  
