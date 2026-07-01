@@ -1,6 +1,7 @@
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, HTTPException
 from database import DatabaseManager  
-from crud import get_all_products, create_product
+from crud import get_all_products, create_product, get_product_with_id, update_patch_product
+from schemas import CreateProduct, ReadProduct, UpdateProduct
 import os 
 import traceback
 
@@ -27,19 +28,32 @@ def get_db():
     finally:
         conn.close()
 
-@app.get("/products")
+@app.get("/products", response_model=list[ReadProduct])
 def read_products(db = Depends(get_db)):
-    try:
-        products = get_all_products(db)
-        return {"products": products}
-    
-    except Exception as e:
-        return {"error": f"Something went wrong: {e}"}
+    products = get_all_products(db)
+    return products
 
 @app.post("/add_product")
-def add_product(name : str, description : str, category : str, price : float, db = Depends(get_db)):
-    create_product(db, name, description, category, price)
+def add_product(product: CreateProduct, db = Depends(get_db)):
+    create_product(db, product)
 
-    return {"message" : f"The product {name} has been added correctly! Finally!"}
+    return {"message" : f"The product {product.name} has been added correctly! Finally!"}
 
-# @app.get
+@app.get("/products/{product_id}")
+def get_product_by_id(product_id: int, db = Depends(get_db)):
+    product = get_product_with_id(db, product_id)
+
+    if not product:
+        raise HTTPException(status_code=404, detail=f"Product with ID {product_id} not found")
+    return product
+
+@app.patch("/products/{product_id}")
+def update_product_endpoint(product_id : int, product_update : UpdateProduct, db = Depends(get_db)):
+    existing_product = get_product_with_id(db, product_id)
+
+    if not existing_product:
+        raise HTTPException(status_code=404, detail=f"Product with ID {product_id} not found")
+    
+    updated_product = update_patch_product(db, product_id, product_update)
+
+    return updated_product

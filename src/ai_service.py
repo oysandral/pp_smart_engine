@@ -33,6 +33,6 @@ def get_embedding(text : str) -> List[float]:
 if __name__ == "__main__":
     test_text = "Nowe zasady ochrony środowiska 2026"
     vector = get_embedding(test_text)
-    if vector:
-        print(f"Finally! The vector's length: {len(vector)}")
-        print(f"First 3 numbers: {vector[:3]}")
+    # if vector:
+    #     print(f"Finally! The vector's length: {len(vector)}")
+    #     print(f"First 3 numbers: {vector[:3]}")
