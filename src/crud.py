@@ -3,6 +3,8 @@ from schemas import CreateProduct, UpdateProduct
 from psycopg2.extras import RealDictCursor
 import traceback
 
+# TODO: update all functions using try-expect/ with
+
 def get_all_products(conn):
     with conn.cursor(cursor_factory=RealDictCursor) as cursor:
         cursor.execute("SELECT id, name, description, category, price FROM products;")
