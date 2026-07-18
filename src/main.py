@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Depends, HTTPException
 from database import DatabaseManager  
-from crud import get_all_products, create_product, get_product_with_id, update_patch_product
+from crud import get_all_products, create_product, get_product_with_id, update_patch_product, delete_product_crud, search_products
 from schemas import CreateProduct, ReadProduct, UpdateProduct
 import os 
 import traceback
@@ -57,3 +57,23 @@ def update_product_endpoint(product_id : int, product_update : UpdateProduct, db
     updated_product = update_patch_product(db, product_id, product_update)
 
     return updated_product
+
+@app.delete("/products/delete/{product_id}")
+def delete_product(product_id : int, db = Depends(get_db)):
+    existing_product = get_product_with_id(db, product_id)
+
+    if not existing_product:
+        raise HTTPException(status_code=404, detail=f"Product with ID {product_id} not found. Please provide the correct ID.")
+    
+    delete_product_crud(db, product_id)
+
+    return {"message" : f"Item {product_id} was deleted correctly!"}
+
+@app.get("/search", response_model=list[ReadProduct])
+def get_similar_products(producr_descr : str, db = Depends(get_db)):
+    searched_product = search_products(db, producr_descr)
+    
+    if not searched_product:
+        raise HTTPException(status_code=404, detail=f"No items found.")
+    
+    return searched_product

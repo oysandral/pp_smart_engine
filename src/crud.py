@@ -1,6 +1,7 @@
 from ai_service import get_embedding
 from schemas import CreateProduct, UpdateProduct
 from psycopg2.extras import RealDictCursor
+import traceback
 
 def get_all_products(conn):
     with conn.cursor(cursor_factory=RealDictCursor) as cursor:
@@ -39,28 +40,11 @@ def create_product(conn, product: CreateProduct):
     
     conn.commit()
 
-def search_products(conn, search_text : str):
-    search_vector = get_embedding(search_text)
-
-    if not search_vector:
-        return []
-    
-    cursor = conn.cursor()
-
-    query = ('''
-            SELECT id, name, description, category, price 
-            FROM products
-            ORDER BY embedding <=> %s
-            LIMIT 5;
-            ''')
-    cursor.execute(query, str(search_vector))
-    return cursor.fetchall()
-
 def update_patch_product(conn, product_id : int, payload : UpdateProduct):
     update_data = payload.model_dump(exclude_unset=True)
 
     if not update_data:
-        return None
+        return {"message" : "No data provided for update."}
     
     fields = [f"{key} = %s" for key in update_data.keys()]
 
@@ -79,3 +63,36 @@ def update_patch_product(conn, product_id : int, payload : UpdateProduct):
     conn.commit()
 
     return updated_product
+
+def delete_product_crud(conn, product_id : int):
+    cursor = conn.cursor()
+
+    query = ('''
+            DELETE FROM products WHERE id = %s;
+            ''')
+    cursor.execute(query, (product_id,))
+    conn.commit()
+
+def search_products(conn, descr : str):
+    descr_embeddings = get_embedding(descr)
+
+    if not descr_embeddings:
+            return []
+    
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+            query = ('''
+                    SELECT id, name, description, category, price, 1 - (embedding <=> %s::vector) AS similarity
+                    FROM products
+                    WHERE (1 - (embedding <=> %s::vector)) > 0.6
+                    ORDER BY similarity DESC
+                    LIMIT 5;
+                    ''')
+            cursor.execute(query, (descr_embeddings, descr_embeddings,))
+
+            return cursor.fetchall()
+    
+    except Exception as e:
+        print(f"The search description could not be vectorized: {e}")
+        traceback.print_exc()
+        return []
