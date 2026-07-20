@@ -3,50 +3,56 @@ from schemas import CreateProduct, UpdateProduct
 from psycopg2.extras import RealDictCursor
 import traceback
 
-# TODO: update all functions using try-expect/ with
-
 def get_all_products(conn):
     with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-        cursor.execute("SELECT id, name, description, category, price FROM products;")
-
+        query =('''
+                SELECT id, name, description, category, price 
+                FROM products;
+                ''')
+        cursor.execute(query)
         result = cursor.fetchall()
+
     return result
 
 def get_product_with_id(conn, product_id : int):
     with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-        cursor.execute("SELECT name, description, category, price FROM products WHERE id = %s;", 
-                       (product_id,))
+        query = ('''
+                SELECT name, description, category, price 
+                 FROM products 
+                 WHERE id = %s;
+                ''')
+        cursor.execute(query, (product_id,))
         result = cursor.fetchone()
 
     return result 
 
 def create_product(conn, product: CreateProduct):
-    cursor = conn.cursor()
-
-    query = ('''
-            INSERT INTO products (name, description, category, price, embedding)
-                VALUES (%s, %s, %s, %s, %s);
-            ''')
-    
     vector = get_embedding(product.description)
+
     if not vector:
         vector = [0.0] * 3072
-    
-    cursor.execute(query, (
-        product.name, 
-        product.description,
-        product.category,
-        product.price,
-        str(vector)
-        ))
-    
-    conn.commit()
+        
+    with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+        query = ('''
+                INSERT INTO products (name, description, category, price, embedding)
+                    VALUES (%s, %s, %s, %s, %s);
+                ''')
+        
+        cursor.execute(query, (
+            product.name, 
+            product.description,
+            product.category,
+            product.price,
+            str(vector)
+            ))
+        
+        conn.commit()
 
 def update_patch_product(conn, product_id : int, payload : UpdateProduct):
     update_data = payload.model_dump(exclude_unset=True)
 
     if not update_data:
-        return {"message" : "No data provided for update."}
+        return None
     
     fields = [f"{key} = %s" for key in update_data.keys()]
 
@@ -59,21 +65,34 @@ def update_patch_product(conn, product_id : int, payload : UpdateProduct):
             WHERE id = %s RETURNING *;
             ''')
     
-    with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-        cursor.execute(query, tuple(values))
-        updated_product = cursor.fetchone()
-    conn.commit()
+    try: 
+        with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+            cursor.execute(query, tuple(values))
+            updated_product = cursor.fetchone()
 
-    return updated_product
+            conn.commit()
+
+            return updated_product
+    
+    except Exception as e:
+        print(f"Technical database problem: {e}.")
+        traceback.print_exc()
+        return None
 
 def delete_product_crud(conn, product_id : int):
-    cursor = conn.cursor()
+    existing_product = get_product_with_id(conn, product_id)
 
-    query = ('''
-            DELETE FROM products WHERE id = %s;
-            ''')
-    cursor.execute(query, (product_id,))
-    conn.commit()
+    if not existing_product:
+        return False
+
+    with conn.cursor(cursor_factory=RealDictCursor) as cursor: 
+        query = ('''
+                DELETE FROM products WHERE id = %s;
+                ''')
+        cursor.execute(query, (product_id,))
+        conn.commit()
+
+    return True
 
 def search_products(conn, descr : str):
     descr_embeddings = get_embedding(descr)
