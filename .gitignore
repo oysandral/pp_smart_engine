@@ -4,6 +4,7 @@ env/
 __pycache__/
 
 src/settings.json
+test/test_settings.json
 
 *.pyc
 *.log

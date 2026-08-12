@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional, List
 
 class CreateProduct(BaseModel):
@@ -14,15 +14,14 @@ class ReadProduct(BaseModel):
     category : str = Field(min_length=3, pattern=r"^[a-zA-Z\s\-\.]+$")
     price : float = Field(gt=0)
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class UpdateProduct(BaseModel):
     name : str | None = Field(min_length=3, max_length=100, pattern=r"^[a-zA-Z\s\-\.]+$") 
     description: str | None = Field(min_length=3, max_length=200, pattern=r"^[a-zA-Z\s\-\.]+$") 
     price: float | None = Field(gt=0) 
 
-    class Config:
+    model_config = ConfigDict(
         json_schema_extra = {
             "example": {
                 "name": "Nowa nazwa produktu",
@@ -30,3 +29,4 @@ class UpdateProduct(BaseModel):
                 "price": 99.99
             }
         }
+    )
