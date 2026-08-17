@@ -1,4 +1,4 @@
-from src.crud import get_product_with_id, get_all_products, delete_product_crud, create_product
+from src.crud import get_product_with_id, get_all_products, delete_product_crud, create_product, search_products
 from src.schemas import CreateProduct
 
 def test_connection(test_connection):
@@ -11,7 +11,6 @@ def test_connection(test_connection):
         result = cursor.fetchone()
 
     assert result[0] == 4
-
 
 def test_get_product_with_id(generate_data):
     test_product = get_product_with_id(generate_data, 2)
@@ -41,24 +40,9 @@ def test_create_product(generate_data):
 
     assert len(get_all_products(generate_data)) == 9
 
-# def create_product(conn, product: CreateProduct):
-#     vector = get_embedding(product.description)
+def test_search_products(generate_data):
+    result = search_products(generate_data, "Something from Uji Japan")
+    assert result[0]["name"] == "Organic Matcha Green Tea"
 
-#     if not vector:
-#         vector = [0.0] * 3072
-        
-#     with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-#         query = ('''
-#                 INSERT INTO products (name, description, category, price, embedding)
-#                     VALUES (%s, %s, %s, %s, %s);
-#                 ''')
-        
-#         cursor.execute(query, (
-#             product.name, 
-#             product.description,
-#             product.category,
-#             product.price,
-#             str(vector)
-#             ))
-        
-#         conn.commit()
+    result = search_products(generate_data, "Something for ice")
+    assert result == []

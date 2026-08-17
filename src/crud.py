@@ -1,6 +1,7 @@
 from ai_service import get_embedding
 from schemas import CreateProduct, UpdateProduct
 from psycopg2.extras import RealDictCursor
+from pgvector.psycopg2 import register_vector
 import traceback
 
 def get_all_products(conn):
@@ -37,7 +38,8 @@ def create_product(conn, product: CreateProduct):
                 INSERT INTO products (name, description, category, price, embedding)
                     VALUES (%s, %s, %s, %s, %s);
                 ''')
-        
+
+        register_vector(conn)
         cursor.execute(query, (
             product.name, 
             product.description,
@@ -109,6 +111,8 @@ def search_products(conn, descr : str):
                     ORDER BY similarity DESC
                     LIMIT 5;
                     ''')
+
+            register_vector(conn)
             cursor.execute(query, (descr_embeddings, descr_embeddings,))
 
             return cursor.fetchall()
